@@ -1,0 +1,69 @@
+version: "3.7"
+
+x-project-base:
+  &project-base
+  env_file:
+    - .env
+  restart: always
+  networks:
+    - source-verify
+
+x-project-repository-mount:
+  &project-repository-mount
+  type: bind
+  source: $REPOSITORY_PATH
+  
+x-project-mount:
+  &project-database-mount
+  type: bind
+  source: $DATABASE_PATH
+
+x-env-file-mount:
+  &env-file-mount
+  type: bind
+  source: .env
+
+x-project-chain-mount:
+  &project-chain-mount
+
+networks:
+  source-verify:
+  
+services:
+  geth-mainnet:
+    <<: *project-base
+    image: ethereum/source-verify:geth-latest
+    container_name: geth-${TAG}-mainnet
+    command: --syncmode "full"
+    volumes:
+    - type: bind
+      source: ${DATABASE_PATH}/mainnet
+      target: /tmp/
+  geth-goerli:
+    <<: *project-base
+    image: ethereum/source-verify:geth-latest
+    container_name: geth-${TAG}-goerli
+    command: --syncmode "full" --goerli
+    volumes:
+    - type: bind
+      source: ${DATABASE_PATH}/goerli
+      target: /tmp/
+  geth-rinkeby:
+    <<: *project-base
+    image: ethereum/source-verify:geth-latest
+    container_name: geth-${TAG}-rinkeby
+    command: --syncmode "full" --rinkeby
+    volumes:
+    - type: bind
+      source: ${DATABASE_PATH}/rinkeby
+      target: /tmp/
+  s3sync:
+    <<: *project-base
+    image: ethereum/source-verify:s3-${TAG}
+    container_name: s3-${TAG}
+    volumes:
+      - <<: *env-file-mount
+        target: /app/.env
+      - <<: *project-database-mount
+        target: /app/repository/database/
+
