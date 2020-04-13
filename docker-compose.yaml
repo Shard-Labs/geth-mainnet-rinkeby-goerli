@@ -18,13 +18,15 @@ x-project-mount:
   type: bind
   source: $DATABASE_PATH
 
+x-project-blockchain-data-mount:
+  &project-blockchain-data-mount
+  type: bind
+  target: /root/.ethereum/
+
 x-env-file-mount:
   &env-file-mount
   type: bind
   source: .env
-
-x-project-chain-mount:
-  &project-chain-mount
 
 networks:
   source-verify:
@@ -37,8 +39,11 @@ services:
     command: --syncmode "full"
     volumes:
     - type: bind
-      source: ${DATABASE_PATH}/mainnet
+      source: ${DATABASE_PATH}/mainnet/chaindb
       target: /tmp/
+    - type: bind
+      target: /root/.ethereum/geth
+      source: ${DATABASE_PATH}/mainnet/geth
   geth-goerli:
     <<: *project-base
     image: ethereum/source-verify:geth-latest
@@ -46,8 +51,11 @@ services:
     command: --syncmode "full" --goerli
     volumes:
     - type: bind
-      source: ${DATABASE_PATH}/goerli
+      source: ${DATABASE_PATH}/goerli/chaindb
       target: /tmp/
+    - type: bind
+      target: /root/.ethereum/goerli
+      source: ${DATABASE_PATH}/goerli/geth
   geth-rinkeby:
     <<: *project-base
     image: ethereum/source-verify:geth-latest
@@ -55,15 +63,18 @@ services:
     command: --syncmode "full" --rinkeby
     volumes:
     - type: bind
-      source: ${DATABASE_PATH}/rinkeby
+      source: ${DATABASE_PATH}/rinkeby/chaindb
       target: /tmp/
-  s3sync:
-    <<: *project-base
-    image: ethereum/source-verify:s3-${TAG}
-    container_name: s3-${TAG}
-    volumes:
-      - <<: *env-file-mount
-        target: /app/.env
-      - <<: *project-database-mount
-        target: /app/repository/database/
+    - type: bind
+      target: /root/.ethereum/rinkeby
+      source: ${DATABASE_PATH}/rinkeby/geth
+  # s3sync:
+  #   <<: *project-base
+  #   image: ethereum/source-verify:s3-${TAG}
+  #   container_name: s3-${TAG}
+  #   volumes:
+  #     - <<: *env-file-mount
+  #       target: /app/.env
+  #     - <<: *project-database-mount
+  #       target: /app/repository/database/
 
